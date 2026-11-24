@@ -1,7 +1,9 @@
 name: CI
 
 on:
+  # Branches are checked through their pull request; main after the merge.
   push:
+    branches: [main]
   pull_request:
 
 permissions:
