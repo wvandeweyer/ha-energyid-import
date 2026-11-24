@@ -1,0 +1,12 @@
+[
+  {
+    "id": "dummy-record-1",
+    "displayName": "Dummy Home",
+    "timeZone": "Europe/Brussels"
+  },
+  {
+    "id": "dummy-record-2",
+    "displayName": "Dummy Cabin",
+    "timeZone": "Europe/Brussels"
+  }
+]

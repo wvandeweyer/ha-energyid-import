@@ -1,0 +1,58 @@
+# Every hook runs again in CI; one failure blocks the merge (docs/SPEC.md 9.1).
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check
+        entry: uv run --locked ruff check
+        language: system
+        types: [python]
+        require_serial: true
+      - id: ruff-format
+        name: ruff format --check
+        entry: uv run --locked ruff format --check
+        language: system
+        types: [python]
+        require_serial: true
+      - id: mypy
+        name: mypy
+        entry: uv run --locked mypy
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+      - id: pytest
+        name: pytest
+        entry: uv run --locked pytest -q
+        language: system
+        types_or: [python, json]
+        pass_filenames: false
+      - id: codespell
+        name: codespell
+        entry: uv run --locked codespell
+        language: system
+        types: [text]
+        # Dutch text; codespell only knows English.
+        exclude: ^(docs/SPEC\.md|custom_components/energyid_import/translations/nl\.json|uv\.lock)$
+      - id: yamllint
+        name: yamllint
+        entry: uv run --locked yamllint --strict
+        language: system
+        types: [yaml]
+      - id: uv-lock
+        name: uv lock --check
+        entry: uv lock --check
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-json
+  - repo: https://github.com/rhysd/actionlint
+    rev: v1.7.12
+    hooks:
+      - id: actionlint
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

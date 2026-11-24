@@ -1,0 +1,78 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Verbinden met EnergyID",
+        "description": "Maak in de accountinstellingen van EnergyID een persoonlijke API-key aan met leesrechten op dossiers.",
+        "data": {
+          "api_key": "API-key"
+        }
+      },
+      "record": {
+        "title": "Kies een dossier",
+        "data": {
+          "record_id": "Dossier"
+        }
+      },
+      "meters": {
+        "title": "Kies meters",
+        "description": "Voor elke gekozen meter worden uurlijkse statistieken geïmporteerd.",
+        "data": {
+          "meter_ids": "Meters",
+          "backfill_months": "Aantal maanden historiek"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Opnieuw aanmelden bij EnergyID",
+        "description": "De API-key voor {record} werd geweigerd. Geef een nieuwe key met leesrechten op dit dossier.",
+        "data": {
+          "api_key": "API-key"
+        }
+      },
+      "reconfigure": {
+        "title": "API-key vervangen",
+        "description": "Geef een nieuwe API-key met leesrechten op {record}.",
+        "data": {
+          "api_key": "API-key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "De API-key is ongeldig of heeft geen leesrechten.",
+      "cannot_connect": "EnergyID is niet bereikbaar.",
+      "unknown": "EnergyID gaf een onverwacht antwoord.",
+      "record_not_found": "Deze API-key heeft geen toegang tot het ingestelde dossier.",
+      "no_meters_selected": "Kies minstens één meter."
+    },
+    "abort": {
+      "already_configured": "Dit dossier is al ingesteld.",
+      "no_records": "Deze API-key heeft geen toegang tot een dossier.",
+      "no_meters": "Dit dossier heeft geen meters die geïmporteerd kunnen worden.",
+      "invalid_auth": "De API-key is ongeldig of heeft geen leesrechten.",
+      "cannot_connect": "EnergyID is niet bereikbaar.",
+      "unknown": "EnergyID gaf een onverwacht antwoord.",
+      "reauth_successful": "De API-key is bijgewerkt.",
+      "reconfigure_successful": "De API-key is bijgewerkt."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Kies meters",
+        "description": "Een nieuw gekozen meter importeert zijn historiek bij de volgende sync. Statistieken van een niet langer gekozen meter blijven bewaard.",
+        "data": {
+          "meter_ids": "Meters",
+          "backfill_months": "Aantal maanden historiek"
+        }
+      }
+    },
+    "error": {
+      "no_meters_selected": "Kies minstens één meter."
+    },
+    "abort": {
+      "invalid_auth": "De API-key is ongeldig of heeft geen leesrechten.",
+      "cannot_connect": "EnergyID is niet bereikbaar.",
+      "unknown": "EnergyID gaf een onverwacht antwoord."
+    }
+  }
+}

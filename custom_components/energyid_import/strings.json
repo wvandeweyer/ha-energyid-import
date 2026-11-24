@@ -1,0 +1,78 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to EnergyID",
+        "description": "Create a personal API key with read access to records in your EnergyID account settings.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "record": {
+        "title": "Choose a record",
+        "data": {
+          "record_id": "Record"
+        }
+      },
+      "meters": {
+        "title": "Choose meters",
+        "description": "Hourly statistics are imported for every selected meter.",
+        "data": {
+          "meter_ids": "Meters",
+          "backfill_months": "Months of history to import"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate EnergyID",
+        "description": "The API key for {record} was rejected. Enter a new key with read access to this record.",
+        "data": {
+          "api_key": "API key"
+        }
+      },
+      "reconfigure": {
+        "title": "Replace the API key",
+        "description": "Enter a new API key with read access to {record}.",
+        "data": {
+          "api_key": "API key"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "The API key is invalid or lacks read access.",
+      "cannot_connect": "Could not reach EnergyID.",
+      "unknown": "EnergyID returned an unexpected response.",
+      "record_not_found": "This API key has no access to the configured record.",
+      "no_meters_selected": "Select at least one meter."
+    },
+    "abort": {
+      "already_configured": "This record is already configured.",
+      "no_records": "This API key has no access to any record.",
+      "no_meters": "This record has no meters that can be imported.",
+      "invalid_auth": "The API key is invalid or lacks read access.",
+      "cannot_connect": "Could not reach EnergyID.",
+      "unknown": "EnergyID returned an unexpected response.",
+      "reauth_successful": "The API key was updated.",
+      "reconfigure_successful": "The API key was updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Choose meters",
+        "description": "A newly selected meter imports its history on the next sync. Statistics of a deselected meter are kept.",
+        "data": {
+          "meter_ids": "Meters",
+          "backfill_months": "Months of history to import"
+        }
+      }
+    },
+    "error": {
+      "no_meters_selected": "Select at least one meter."
+    },
+    "abort": {
+      "invalid_auth": "The API key is invalid or lacks read access.",
+      "cannot_connect": "Could not reach EnergyID.",
+      "unknown": "EnergyID returned an unexpected response."
+    }
+  }
+}
