@@ -6,14 +6,20 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from custom_components.energyid_import.api import DataPoint, parse_data_point
-from custom_components.energyid_import.const import Interval
+from custom_components.energyid_import.const import Interval, Unit
 from custom_components.energyid_import.statistics import (
     HourValue,
     StatisticRow,
     accumulate,
+    local_midnight,
     merge,
     normalize,
     plan,
+    statistic_id,
+    statistic_name,
+    statistic_spec,
+    subtract_months,
+    window_start,
 )
 
 from .conftest import load_fixture
@@ -137,6 +143,13 @@ def test_spring_daylight_saving_day_has_23_hours() -> None:
     )
 
 
+def test_watt_hours_and_kilowatt_hours_keep_their_unit() -> None:
+    """Values are not converted; the statistic carries the meter's unit."""
+    assert statistic_spec("m1", "n", Unit.WATT_HOUR).unit == "Wh"
+    assert statistic_spec("m1", "n", Unit.KILOWATT_HOUR).unit == "kWh"
+    assert statistic_spec("m1", "n", Unit.CUBIC_METER).unit_class == "volume"
+
+
 def rows(*states: float, base: float = 0.0, first: int = 0) -> tuple[StatisticRow, ...]:
     """Build consecutive rows from 1 November 2026 00:00 UTC."""
     hours = [
@@ -207,3 +220,84 @@ def test_merge_prefers_fresh_values() -> None:
     fresh = [HourValue(start=hour(1, 1), state=3.0)]
 
     assert [h.state for h in merge(stored, fresh)] == [1.0, 3.0]
+
+
+@pytest.mark.parametrize(
+    ("day", "months", "expected"),
+    [
+        (date(2026, 11, 24), 12, date(2025, 11, 24)),
+        (date(2026, 3, 31), 1, date(2026, 2, 28)),
+        (date(2026, 1, 15), 1, date(2025, 12, 15)),
+        (date(2026, 5, 10), 0, date(2026, 5, 10)),
+        (date(2026, 5, 10), 60, date(2021, 5, 10)),
+    ],
+)
+def test_subtract_months(day: date, months: int, expected: date) -> None:
+    """Months are subtracted with the day clamped to the month's end."""
+    assert subtract_months(day, months) == expected
+
+
+def test_window_start() -> None:
+    """Backfill uses months; later syncs refetch 35 local days."""
+    today = date(2026, 11, 24)
+
+    backfill = window_start(
+        last_start=None, today=today, time_zone=BRUSSELS, backfill_months=12
+    )
+    refetch = window_start(
+        last_start=hour(23, 22), today=today, time_zone=BRUSSELS, backfill_months=12
+    )
+    future = window_start(
+        last_start=datetime(2027, 6, 1, tzinfo=UTC),
+        today=today,
+        time_zone=BRUSSELS,
+        backfill_months=12,
+    )
+
+    assert backfill == date(2025, 11, 24)
+    # 35 days before 23 Nov 23:00 local is 20 Oct 00:00 local (summer time).
+    assert refetch == date(2026, 10, 20)
+    assert future == today
+
+
+def test_local_midnight() -> None:
+    """Local midnight is 23:00 or 22:00 UTC depending on the season."""
+    assert local_midnight(date(2026, 11, 24), BRUSSELS) == hour(23, 23)
+    assert local_midnight(date(2026, 7, 1), BRUSSELS) == datetime(
+        2026, 6, 30, 22, tzinfo=UTC
+    )
+
+
+@pytest.mark.parametrize(
+    ("meter_id", "expected"),
+    [
+        ("dummy-meter-1", "energyid_import:meter_dummy_meter_1"),
+        ("3F2A--9C_x", "energyid_import:meter_3f2a_9c_x"),
+        ("__EM 12__", "energyid_import:meter_em_12"),
+    ],
+)
+def test_statistic_id(meter_id: str, expected: str) -> None:
+    """Ids become slugs without double or edge underscores."""
+    assert statistic_id(meter_id) == expected
+
+
+def test_statistic_id_needs_usable_characters() -> None:
+    """An id without letters or digits is rejected."""
+    with pytest.raises(ValueError, match="no characters"):
+        statistic_id("--")
+
+
+@pytest.mark.parametrize(
+    ("register", "ean", "expected"),
+    [
+        (None, None, "EnergyID Home Import"),
+        ("high", None, "EnergyID Home Import (high)"),
+        ("low", "1234", "EnergyID Home Import (low, EAN …1234)"),
+        (None, "1234", "EnergyID Home Import (EAN …1234)"),
+    ],
+)
+def test_statistic_name(register: str | None, ean: str | None, expected: str) -> None:
+    """Register and EAN suffix are added only when present."""
+    name = statistic_name("Home", "Import", register=register, ean_suffix=ean)
+
+    assert name == expected

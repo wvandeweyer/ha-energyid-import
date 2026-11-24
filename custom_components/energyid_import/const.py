@@ -76,6 +76,17 @@ INTERVAL_DURATION: Final = MappingProxyType(
     }
 )
 
+# Home Assistant unit class per importable unit.
+UNIT_CLASSES: Final = MappingProxyType(
+    {
+        Unit.KILOWATT_HOUR: "energy",
+        Unit.WATT_HOUR: "energy",
+        Unit.CUBIC_METER: "volume",
+    }
+)
+
+STATISTIC_PREFIX: Final = "meter_"
+
 # Water reaches Home Assistant faster through the P1 port of the digital meter.
 EXCLUDED_METRICS: Final = frozenset({Metric.DRINKING_WATER_IMPORT})
 
