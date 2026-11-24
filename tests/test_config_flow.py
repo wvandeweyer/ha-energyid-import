@@ -263,6 +263,7 @@ async def test_reauth(hass: HomeAssistant, mock_config_entry: MockConfigEntry) -
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reauth_successful"
+    await hass.async_block_till_done()
     assert mock_config_entry.data[CONF_API_KEY] == NEW_API_KEY
 
 
@@ -308,6 +309,7 @@ async def test_reconfigure(
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "reconfigure_successful"
+    await hass.async_block_till_done()
     assert mock_config_entry.data[CONF_API_KEY] == NEW_API_KEY
 
 
