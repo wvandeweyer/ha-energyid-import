@@ -1,0 +1,63 @@
+# serializer version: 1
+# name: test_diagnostics_redact_private_data
+  dict({
+    'entry': dict({
+      'data': dict({
+        'api_key': '**REDACTED**',
+        'record_id': '**REDACTED**',
+      }),
+      'options': dict({
+        'backfill_months': 12,
+        'meter_count': 2,
+      }),
+    }),
+    'last_update_success': True,
+    'meters': list([
+      dict({
+        'activated': None,
+        'closed': False,
+        'connection_id': '**REDACTED**',
+        'display_name': '**REDACTED**',
+        'ean_suffix': '**REDACTED**',
+        'hidden': False,
+        'id': '**REDACTED**',
+        'interval': 'PT15M',
+        'metric': 'electricityImport',
+        'multiplier': 1.0,
+        'register': 'high',
+        'status': dict({
+          'error': None,
+          'latest_data': '2026-11-23T23:00:00+00:00',
+          'written': 72,
+        }),
+        'unit': 'kWh',
+      }),
+      dict({
+        'activated': None,
+        'closed': False,
+        'connection_id': '**REDACTED**',
+        'display_name': '**REDACTED**',
+        'ean_suffix': '**REDACTED**',
+        'hidden': False,
+        'id': '**REDACTED**',
+        'interval': 'PT15M',
+        'metric': 'electricityExport',
+        'multiplier': 1.0,
+        'register': 'high',
+        'status': dict({
+          'error': None,
+          'latest_data': '2026-11-23T23:00:00+00:00',
+          'written': 72,
+        }),
+        'unit': 'kWh',
+      }),
+    ]),
+    'missing_meter_count': 0,
+    'record': dict({
+      'display_name': '**REDACTED**',
+      'id': '**REDACTED**',
+      'time_zone': 'Europe/Brussels',
+    }),
+    'synced_at': '2026-11-24T12:00:00+00:00',
+  })
+# ---
