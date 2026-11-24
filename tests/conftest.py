@@ -10,9 +10,13 @@ from homeassistant.components.recorder.core import Recorder
 from homeassistant.const import CONF_API_KEY
 import pytest
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.syrupy import (
+    HomeAssistantSnapshotExtension,
+)
 from pytest_homeassistant_custom_component.test_util.aiohttp import (
     AiohttpClientMocker,
 )
+from syrupy.assertion import SnapshotAssertion
 
 from custom_components.energyid_import.api import JsonValue
 from custom_components.energyid_import.const import (
@@ -84,6 +88,16 @@ def check_log_output(
         if r.levelno >= logging.WARNING and _EXPECTED_HA_WARNING not in r.getMessage()
     ]
     assert not warnings, f"Unexpected log lines: {warnings}"
+
+
+@pytest.fixture
+def snapshot(snapshot: SnapshotAssertion) -> SnapshotAssertion:
+    """Use Home Assistant's snapshot extension in every environment.
+
+    Older test harness versions fall back to syrupy's default extension, which
+    stores snapshots in another folder; this keeps them in tests/snapshots.
+    """
+    return snapshot.use_extension(HomeAssistantSnapshotExtension)
 
 
 @pytest.fixture
