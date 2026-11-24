@@ -84,5 +84,19 @@
         "name": "Last sync"
       }
     }
+  },
+  "issues": {
+    "stale_data": {
+      "title": "No recent EnergyID data for {meter}",
+      "description": "The newest imported hour for {meter} is more than {days} days old. EnergyID may no longer receive data from Fluvius: the Fluvius mandate in EnergyID expires after three years. Renew it in your EnergyID record."
+    },
+    "no_data": {
+      "title": "No EnergyID data for {meter}",
+      "description": "EnergyID returned no data points for {meter}. Check in EnergyID that the meter receives readings."
+    },
+    "meter_removed": {
+      "title": "EnergyID meter {meter} is no longer available",
+      "description": "The selected meter {meter} no longer exists in the record or can no longer be imported. Remove it from the meter selection in the integration options."
+    }
   }
 }

@@ -84,5 +84,19 @@
         "name": "Laatste sync"
       }
     }
+  },
+  "issues": {
+    "stale_data": {
+      "title": "Geen recente EnergyID-data voor {meter}",
+      "description": "Het nieuwste geïmporteerde uur voor {meter} is meer dan {days} dagen oud. Mogelijk ontvangt EnergyID geen data meer van Fluvius: het Fluvius-mandaat in EnergyID vervalt na drie jaar. Vernieuw het in je EnergyID-dossier."
+    },
+    "no_data": {
+      "title": "Geen EnergyID-data voor {meter}",
+      "description": "EnergyID gaf geen enkel datapunt voor {meter}. Kijk in EnergyID na of de meter metingen ontvangt."
+    },
+    "meter_removed": {
+      "title": "EnergyID-meter {meter} is niet meer beschikbaar",
+      "description": "De gekozen meter {meter} bestaat niet meer in het dossier of kan niet meer geïmporteerd worden. Verwijder hem uit de meterselectie in de opties van de integratie."
+    }
   }
 }
