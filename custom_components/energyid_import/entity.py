@@ -37,6 +37,7 @@ def meter_device(coordinator: EnergyIDCoordinator, meter: Meter) -> DeviceInfo:
         name=name or meter.display_name,
         manufacturer=MANUFACTURER,
         model=meter.metric,
+        serial_number=f"EAN …{meter.ean_suffix}" if meter.ean_suffix else None,
         entry_type=DeviceEntryType.SERVICE,
     )
 

@@ -88,6 +88,7 @@ async def test_sensors_and_devices(
     assert record is not None
     assert meter is not None
     assert meter.via_device_id == record.id
+    assert meter.serial_number == "EAN …0001"
     assert record.entry_type is dr.DeviceEntryType.SERVICE
 
 
