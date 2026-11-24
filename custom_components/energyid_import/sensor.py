@@ -9,14 +9,12 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.const import EntityCategory
-from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers import device_registry as dr
+from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .api import Meter
-from .const import CONF_RECORD_ID, DOMAIN
 from .coordinator import EnergyIDConfigEntry, EnergyIDCoordinator
-from .entity import EnergyIDEntity, meter_identifier
+from .entity import EnergyIDEntity, async_sync_devices
 
 PARALLEL_UPDATES = 0
 
@@ -42,27 +40,10 @@ async def async_setup_entry(
     """Add one last-sync sensor and one latest-data sensor per meter."""
     coordinator = entry.runtime_data
     meters = coordinator.data.meters
-    _remove_stale_meter_devices(hass, entry, meters)
+    async_sync_devices(hass, entry)
     entities: list[SensorEntity] = [LastSyncSensor(coordinator, LAST_SYNC)]
     entities.extend(LatestDataSensor(coordinator, LATEST_DATA, m) for m in meters)
     async_add_entities(entities)
-
-
-@callback
-def _remove_stale_meter_devices(
-    hass: HomeAssistant, entry: EnergyIDConfigEntry, meters: tuple[Meter, ...]
-) -> None:
-    """Detach devices of meters that are no longer selected."""
-    record_id: str = entry.data[CONF_RECORD_ID]
-    keep = {(DOMAIN, record_id)} | {
-        (DOMAIN, meter_identifier(record_id, meter.id)) for meter in meters
-    }
-    registry = dr.async_get(hass)
-    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
-        if device.identifiers.isdisjoint(keep):
-            registry.async_update_device(
-                device.id, remove_config_entry_id=entry.entry_id
-            )
 
 
 class LastSyncSensor(EnergyIDEntity, SensorEntity):

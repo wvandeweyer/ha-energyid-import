@@ -44,6 +44,15 @@ async def setup(hass: HomeAssistant, entry: MockConfigEntry) -> None:
     await hass.async_block_till_done()
 
 
+def device_by_identifier(
+    hass: HomeAssistant, entry: MockConfigEntry, identifier: str
+) -> dr.DeviceEntry | None:
+    """Return the entry's device with an identifier, on every HA release."""
+    devices = dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id)
+    matches = [d for d in devices if (DOMAIN, identifier) in d.identifiers]
+    return matches[0] if matches else None
+
+
 def entity_states(
     hass: HomeAssistant, entry: MockConfigEntry
 ) -> list[tuple[str, str, str | None]]:
@@ -72,10 +81,9 @@ async def test_sensors_and_devices(
     await setup(hass, mock_config_entry)
 
     assert entity_states(hass, mock_config_entry) == snapshot
-    devices = dr.async_get(hass)
-    record = devices.async_get_device(identifiers={(DOMAIN, RECORD_ID)})
-    meter = devices.async_get_device(
-        identifiers={(DOMAIN, f"{RECORD_ID}_{IMPORT_METER_ID}")}
+    record = device_by_identifier(hass, mock_config_entry, RECORD_ID)
+    meter = device_by_identifier(
+        hass, mock_config_entry, f"{RECORD_ID}_{IMPORT_METER_ID}"
     )
     assert record is not None
     assert meter is not None
@@ -106,9 +114,8 @@ async def test_deselected_meter_loses_its_device(
 ) -> None:
     """After an options change the dropped meter's device is removed."""
     await setup(hass, mock_config_entry)
-    devices = dr.async_get(hass)
-    export = {(DOMAIN, f"{RECORD_ID}_{EXPORT_METER_ID}")}
-    assert devices.async_get_device(identifiers=export) is not None
+    export = f"{RECORD_ID}_{EXPORT_METER_ID}"
+    assert device_by_identifier(hass, mock_config_entry, export) is not None
 
     hass.config_entries.async_update_entry(
         mock_config_entry,
@@ -117,5 +124,5 @@ async def test_deselected_meter_loses_its_device(
     await hass.config_entries.async_reload(mock_config_entry.entry_id)
     await hass.async_block_till_done()
 
-    assert devices.async_get_device(identifiers=export) is None
+    assert device_by_identifier(hass, mock_config_entry, export) is None
     assert len(entity_states(hass, mock_config_entry)) == 2

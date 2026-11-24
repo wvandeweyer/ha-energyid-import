@@ -1,12 +1,14 @@
 """Base entity and devices for EnergyID Import."""
 
+from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .api import Meter
 from .const import CONF_RECORD_ID, DOMAIN, MANUFACTURER, WEB_BASE_URL
-from .coordinator import EnergyIDCoordinator
+from .coordinator import EnergyIDConfigEntry, EnergyIDCoordinator
 
 
 def record_device(coordinator: EnergyIDCoordinator) -> DeviceInfo:
@@ -27,7 +29,7 @@ def meter_identifier(record_id: str, meter_id: str) -> str:
 
 
 def meter_device(coordinator: EnergyIDCoordinator, meter: Meter) -> DeviceInfo:
-    """Return the device of a meter, linked to the record device."""
+    """Return the device of a meter; async_sync_devices links it to the record."""
     record_id: str = coordinator.entry.data[CONF_RECORD_ID]
     name = f"{meter.display_name} ({meter.register})" if meter.register else None
     return DeviceInfo(
@@ -36,8 +38,32 @@ def meter_device(coordinator: EnergyIDCoordinator, meter: Meter) -> DeviceInfo:
         manufacturer=MANUFACTURER,
         model=meter.metric,
         entry_type=DeviceEntryType.SERVICE,
-        via_device=(DOMAIN, record_id),
     )
+
+
+@callback
+def async_sync_devices(hass: HomeAssistant, entry: EnergyIDConfigEntry) -> None:
+    """Register the record and meter devices and drop deselected meters.
+
+    Meter devices are linked with via_device_id, which works on every
+    supported Home Assistant release, unlike DeviceInfo.via_device.
+    """
+    coordinator = entry.runtime_data
+    registry = dr.async_get(hass)
+    record = registry.async_get_or_create(
+        config_entry_id=entry.entry_id, **record_device(coordinator)
+    )
+    keep = {record.id}
+    for meter in coordinator.data.meters:
+        device = registry.async_get_or_create(
+            config_entry_id=entry.entry_id, **meter_device(coordinator, meter)
+        )
+        if device.via_device_id != record.id:
+            registry.async_update_device(device.id, via_device_id=record.id)
+        keep.add(device.id)
+    for device in dr.async_entries_for_config_entry(registry, entry.entry_id):
+        if device.id not in keep:
+            registry.async_remove_device(device.id)
 
 
 class EnergyIDEntity(CoordinatorEntity[EnergyIDCoordinator]):
