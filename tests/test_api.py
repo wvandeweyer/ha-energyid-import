@@ -169,6 +169,7 @@ async def test_meters(
         unit=Unit.KILOWATT_HOUR,
         multiplier=1.0,
         register="high",
+        interval=Interval.QUARTER_HOUR,
         connection_id="dummy-gridconnection-1",
         ean_suffix="0001",
         activated=None,
@@ -187,7 +188,7 @@ async def test_meter_variants(
     aioclient_mock.get(
         METERS_URL,
         json=[
-            {**base, "unit": "m³"},
+            {**base, "unit": "m³", "interval": "PT10M"},
             {**base, "unit": "kWh", "closed": True, "hidden": True},
             {**base, "unit": "GJ"},
             {**base, "unit": "kWh", "activated": "2020-01-01T00:00:00+01:00"},
@@ -208,6 +209,7 @@ async def test_meter_variants(
     ]
     assert meters[0].multiplier == 1.0
     assert meters[0].register is None
+    assert meters[0].interval is None
     assert meters[0].connection_id is None
     assert meters[0].ean_suffix is None
     assert meters[1].hidden

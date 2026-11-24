@@ -91,6 +91,7 @@ class Meter:
     unit: Unit | None
     multiplier: float
     register: str | None
+    interval: Interval | None
     connection_id: str | None
     ean_suffix: str | None
     activated: datetime | None
@@ -181,6 +182,14 @@ def _optional_datetime(obj: JsonObject, key: str) -> datetime | None:
     return None if value is None else _parse_datetime(value)
 
 
+def _parse_interval(value: str | None) -> Interval | None:
+    """Return the meter's native interval, or None when absent or unknown."""
+    try:
+        return None if value is None else Interval(value)
+    except ValueError:
+        return None
+
+
 def _parse_unit(value: str) -> Unit | None:
     """Return the known unit, or None when the integration cannot import it."""
     try:
@@ -216,6 +225,7 @@ def parse_meter(value: JsonValue) -> Meter:
         unit=_parse_unit(_require_str(obj, "unit")),
         multiplier=1.0 if multiplier is None else multiplier,
         register=_optional_str(obj, "register"),
+        interval=_parse_interval(_optional_str(obj, "interval")),
         connection_id=_optional_str(obj, "gridConnectionId"),
         ean_suffix=_ean_suffix(obj),
         activated=_optional_datetime(obj, "activated"),
