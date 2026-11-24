@@ -104,7 +104,11 @@ disallow_any_explicit = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--strict-markers --strict-config --cov --cov-branch"
-filterwarnings = ["error"]
+filterwarnings = [
+  "error",
+  # Hypothesis on Python 3.14 warns about its own internal PRNG.
+  "ignore:It looks like `register_random`:hypothesis.errors.HypothesisWarning",
+]
 xfail_strict = true
 timeout = 10
 testpaths = ["tests"]

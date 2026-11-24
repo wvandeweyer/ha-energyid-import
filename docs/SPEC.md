@@ -379,7 +379,11 @@ disallow_any_explicit = false
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 addopts = "--strict-markers --strict-config --cov --cov-branch"
-filterwarnings = ["error"]
+filterwarnings = [
+  "error",
+  # Hypothesis on Python 3.14 warns about its own internal PRNG.
+  "ignore:It looks like `register_random`:hypothesis.errors.HypothesisWarning",
+]
 xfail_strict = true
 timeout = 10
 
@@ -388,7 +392,7 @@ fail_under = 100
 exclude_also = ["if TYPE_CHECKING:"]
 ```
 
-De ignore-lijsten hierboven zijn volledig; een regel toevoegen vraagt een aanpassing van deze spec. De configuratie is gecontroleerd met ruff 0.17.6 en mypy 2.4.1: ze laadt zonder fouten en de strengere regels slaan aan op testcode.
+De ignore-lijsten hierboven zijn volledig; een regel toevoegen vraagt een aanpassing van deze spec. De enige uitzondering in `filterwarnings` (2026-11-24, akkoord Wim) negeert een `HypothesisWarning` die Hypothesis onder Python 3.14 over zijn eigen interne random-generator geeft. De configuratie is gecontroleerd met ruff 0.17.6 en mypy 2.4.1: ze laadt zonder fouten en de strengere regels slaan aan op testcode.
 
 ### 9.2 Codeerregels
 
@@ -464,7 +468,11 @@ De drempel is 100% regel- en branchdekking op het hele pakket, zonder uitsluitin
 | Mocken gebeurt alleen op de HTTP-grens (`aioclient_mock`); eigen functies worden nooit gepatcht | architectuurtest op `patch`-doelen |
 | Statistics-tests draaien tegen een echte in-memory recorder | architectuurtest: geen `patch` op de recorder |
 | Geen netwerk, geen `sleep`; tijd loopt via `freezer` | `pytest-socket`, `TID251`, timeout van 10 s |
-| Elke warning is een fout, ook deprecations van HA | `filterwarnings = ["error"]` |
+| Elke warning is een fout, ook deprecations van HA | `filterwarnings = [
+  "error",
+  # Hypothesis on Python 3.14 warns about its own internal PRNG.
+  "ignore:It looks like `register_random`:hypothesis.errors.HypothesisWarning",
+]` |
 | Fixtures bevatten alleen dummy-id's en dummy-namen | test op een vast patroon, `gitleaks` |
 | Diagnostics, entity-states en de geschreven statistics liggen vast in snapshots | `syrupy` |
 
