@@ -83,6 +83,7 @@ class EnergyIDData:
     meters: tuple[Meter, ...]
     missing_meter_ids: frozenset[str]
     statuses: Mapping[str, MeterStatus]
+    synced_at: datetime
 
 
 def _to_row(row: StatisticsRow) -> StatisticRow:
@@ -136,6 +137,7 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             meters=chosen,
             missing_meter_ids=selected - {meter.id for meter in chosen},
             statuses=MappingProxyType(statuses),
+            synced_at=dt_util.utcnow(),
         )
 
     async def _async_sync_meters(
