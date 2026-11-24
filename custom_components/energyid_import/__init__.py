@@ -4,10 +4,12 @@ from typing import Final
 
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import EnergyIDClient
-from .coordinator import EnergyIDConfigEntry, EnergyIDCoordinator
+from .const import CONF_METER_IDS, DOMAIN
+from .coordinator import ISSUE_KINDS, EnergyIDConfigEntry, EnergyIDCoordinator
 
 PLATFORMS: Final[tuple[Platform, ...]] = (Platform.SENSOR,)
 
@@ -31,3 +33,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: EnergyIDConfigEntry) -> 
 async def async_unload_entry(hass: HomeAssistant, entry: EnergyIDConfigEntry) -> bool:
     """Unload a config entry."""
     return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+
+
+async def async_remove_entry(hass: HomeAssistant, entry: EnergyIDConfigEntry) -> None:
+    """Delete the repair issues of a removed entry; its statistics stay."""
+    for meter_id in entry.options.get(CONF_METER_IDS, []):
+        for kind in ISSUE_KINDS:
+            ir.async_delete_issue(hass, DOMAIN, f"{kind}_{meter_id}")

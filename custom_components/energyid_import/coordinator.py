@@ -23,6 +23,7 @@ from homeassistant.components.recorder.statistics import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.recorder import get_instance
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from homeassistant.util import dt as dt_util
@@ -41,6 +42,7 @@ from .const import (
     CONF_METER_IDS,
     CONF_RECORD_ID,
     DOMAIN,
+    STALE_AFTER_DAYS,
     UPDATE_INTERVAL,
     Interval,
     Unit,
@@ -64,6 +66,10 @@ ONE_DAY = timedelta(days=1)
 ERROR_NOT_FOUND = "not_found"
 ERROR_API = "api_error"
 ERROR_CONNECTION = "connection_error"
+ISSUE_STALE_DATA = "stale_data"
+ISSUE_NO_DATA = "no_data"
+ISSUE_METER_REMOVED = "meter_removed"
+ISSUE_KINDS = (ISSUE_STALE_DATA, ISSUE_NO_DATA, ISSUE_METER_REMOVED)
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -129,16 +135,47 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except (EnergyIDConnectionError, EnergyIDApiError) as err:
             raise UpdateFailed(str(err)) from err
-        if chosen and all(status.error for status in statuses.values()):
-            msg = "No meter could be synchronised"
-            raise UpdateFailed(msg)
-        return EnergyIDData(
+        data = EnergyIDData(
             record=record,
             meters=chosen,
             missing_meter_ids=selected - {meter.id for meter in chosen},
             statuses=MappingProxyType(statuses),
             synced_at=dt_util.utcnow(),
         )
+        names = {meter.id: meter.display_name for meter in meters}
+        for meter_id in sorted(selected):
+            active = active_issue(
+                data.statuses.get(meter_id),
+                missing=meter_id in data.missing_meter_ids,
+                now=data.synced_at,
+            )
+            self._update_issues(meter_id, names.get(meter_id, meter_id), active)
+        if chosen and all(status.error for status in statuses.values()):
+            msg = "No meter could be synchronised"
+            raise UpdateFailed(msg)
+        return data
+
+    def _update_issues(
+        self, meter_id: str, meter_name: str, active: str | None
+    ) -> None:
+        """Create the active repair issue of a meter and delete the others."""
+        for kind in ISSUE_KINDS:
+            issue_id = f"{kind}_{meter_id}"
+            if kind != active:
+                ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+                continue
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=kind,
+                translation_placeholders={
+                    "meter": meter_name,
+                    "days": str(STALE_AFTER_DAYS),
+                },
+            )
 
     async def _async_sync_meters(
         self, record: Record, meters: tuple[Meter, ...]
@@ -256,6 +293,22 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             {"state", "sum"},
         )
         return tuple(_to_row(row) for row in result.get(statistic_id, []))
+
+
+def active_issue(
+    status: MeterStatus | None, *, missing: bool, now: datetime
+) -> str | None:
+    """Return the repair issue that applies to one selected meter, if any."""
+    if missing or (status and status.error == ERROR_NOT_FOUND):
+        return ISSUE_METER_REMOVED
+    kind = None
+    if status is None or status.error:
+        kind = None
+    elif status.latest_data is None:
+        kind = ISSUE_NO_DATA
+    elif status.latest_data < now - timedelta(days=STALE_AFTER_DAYS):
+        kind = ISSUE_STALE_DATA
+    return kind
 
 
 def _time_zone(record: Record) -> tzinfo:
