@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta, tzinfo
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from functools import partial
 import logging
 from types import MappingProxyType
@@ -120,6 +120,13 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
         )
         self.entry = config_entry
         self.client = client
+        # Meters to rebuild next sync: from a date, or None for the backfill start.
+        self._rebuild: dict[str, date | None] = {}
+
+    async def async_rebuild(self, meter_id: str, start: date | None) -> None:
+        """Rebuild one meter's statistics from start, then sync as usual."""
+        self._rebuild[meter_id] = start
+        await self.async_refresh()
 
     @override
     async def _async_update_data(self) -> EnergyIDData:
@@ -220,8 +227,10 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
         time_zone = _time_zone(record)
         last = await self._async_last_row(spec.statistic_id)
         today = now.astimezone(time_zone).date()
-        start = window_start(
-            last_start=last.start if last else None,
+        rebuild = meter.id in self._rebuild
+        rebuild_from = self._rebuild.pop(meter.id, None)
+        start = rebuild_from or window_start(
+            last_start=None if rebuild or last is None else last.start,
             today=today,
             time_zone=time_zone,
             backfill_months=self.entry.options[CONF_BACKFILL_MONTHS],

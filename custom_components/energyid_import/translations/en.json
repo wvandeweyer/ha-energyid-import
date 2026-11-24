@@ -98,5 +98,42 @@
       "title": "EnergyID meter {meter} is no longer available",
       "description": "The selected meter {meter} no longer exists in the record or can no longer be imported. Remove it from the meter selection in the integration options."
     }
+  },
+  "services": {
+    "sync": {
+      "name": "Sync now",
+      "description": "Fetches the latest EnergyID data for a record and updates its statistics.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Record",
+          "description": "The EnergyID record to sync."
+        }
+      }
+    },
+    "rebuild_statistics": {
+      "name": "Rebuild statistics",
+      "description": "Fetches a meter's data again and rewrites its statistics from a date onwards.",
+      "fields": {
+        "device_id": {
+          "name": "Meter",
+          "description": "The meter device to rebuild."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "First day to rebuild. Without a date the rebuild starts at the beginning of the imported history."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "The EnergyID record is not loaded."
+    },
+    "not_a_meter": {
+      "message": "The selected device is not an EnergyID meter."
+    },
+    "sync_failed": {
+      "message": "The sync with EnergyID failed. Check the logs for details."
+    }
   }
 }
