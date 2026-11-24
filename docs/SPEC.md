@@ -186,9 +186,9 @@ Alle entities: `_attr_has_entity_name = True`, `translation_key`, stabiele `uniq
 
 De tekst van `stale_data` verwijst naar het Fluvius-mandaat in EnergyID als waarschijnlijke oorzaak.
 
-**Optioneel v1.1: maandpiek**
+**Maandpiek**
 
-Per afnamemeter twee sensoren in kW, `peak_current_month` en `peak_previous_month`, met het tijdstip van de piek als attribuut. Berekening: hoogste kwartierwaarde in kWh maal 4, per kalendermaand in de tijdzone van het dossier. Dit vraagt `PT15M`-data over twee maanden en werkt dus alleen als het dossier kwartierwaarden heeft.
+Per dossier twee sensoren in kW op het dossierapparaat, `peak_current_month` en `peak_previous_month`, met het begin van het piekkwartier als attribuut `peak_start`. Berekening: per kwartier de som van alle afnamemeters van het dossier (dag- en nachtregister samen, gekozen of niet), daarvan het hoogste kwartier in kWh maal 4, per kalendermaand in de tijdzone van het dossier (beslissing 2026-11-24: het capaciteitstarief kijkt naar de totale afname). Dit vraagt `PT15M`-data vanaf de eerste dag van vorige maand; de sensoren ontstaan alleen als elke afnamemeter kwartierwaarden heeft. Een mislukte kwartier-opvraging logt een waarschuwing en laat de piek weg; de statistics-sync blijft staan.
 
 ## 7. Statistics-import
 
@@ -644,5 +644,5 @@ Negen technische aannames wachten op fase 0; vier keuzes zijn aan Wim.
 
 - [ ] Naam en domein: `EnergyID Import` / `energyid_import`, repo `ha-energyid-import`?
 - [x] Publieke repo (bruikbaar voor anderen via HACS) of privé? Publiek (2026-11-24).
-- [ ] Maandpiek in v1.1 meenemen, of weglaten omdat de VM-3P75CT de piek al real-time meet?
+- [x] Maandpiek in v1.1 meenemen, of weglaten omdat de VM-3P75CT de piek al real-time meet? Meenemen (2026-11-24): het is de officiële Fluvius-waarde voor de factuur.
 - [ ] Volstaat de gratis EnergyID-licentie voor kwartierwaarden, of is Premium nodig? Zonder kwartierwaarden valt de integratie terug op dagresolutie.

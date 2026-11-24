@@ -82,6 +82,22 @@
       },
       "last_sync": {
         "name": "Laatste sync"
+      },
+      "peak_current_month": {
+        "name": "Piek deze maand",
+        "state_attributes": {
+          "peak_start": {
+            "name": "Begin van de piek"
+          }
+        }
+      },
+      "peak_previous_month": {
+        "name": "Piek vorige maand",
+        "state_attributes": {
+          "peak_start": {
+            "name": "Begin van de piek"
+          }
+        }
       }
     }
   },

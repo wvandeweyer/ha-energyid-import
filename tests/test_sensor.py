@@ -125,4 +125,7 @@ async def test_deselected_meter_loses_its_device(
     await hass.async_block_till_done()
 
     assert device_by_identifier(hass, mock_config_entry, export) is None
-    assert len(entity_states(hass, mock_config_entry)) == 2
+    latest = [e for e, _, _ in entity_states(hass, mock_config_entry)]
+    assert [e for e in latest if e.endswith("latest_data")] == [
+        "sensor.dummy_grid_import_day_high_latest_data"
+    ]

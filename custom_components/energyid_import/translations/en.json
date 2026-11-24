@@ -82,6 +82,22 @@
       },
       "last_sync": {
         "name": "Last sync"
+      },
+      "peak_current_month": {
+        "name": "Peak this month",
+        "state_attributes": {
+          "peak_start": {
+            "name": "Peak start"
+          }
+        }
+      },
+      "peak_previous_month": {
+        "name": "Peak last month",
+        "state_attributes": {
+          "peak_start": {
+            "name": "Peak start"
+          }
+        }
       }
     }
   },
