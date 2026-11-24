@@ -79,6 +79,22 @@ Corrections older than that need the `rebuild_statistics` action.
 | --- | --- | --- |
 | `energyid_import.sync` | `config_entry_id` | Sync a record now |
 | `energyid_import.rebuild_statistics` | `device_id` (a meter), optional `start_date` | Rewrite a meter's statistics from that date, or from the start of the backfill |
+| `energyid_import.generate_dashboard` | `config_entry_id` | Return a ready-made dashboard for the record |
+
+The record device also has a **Sync now** button.
+
+### Ready-made dashboard
+
+1. **Settings → Tools → Actions**, choose *EnergyID Import: Generate dashboard*,
+   pick the record and press **Perform action**.
+2. Copy the response.
+3. **Settings → Dashboards → Add dashboard → New dashboard from scratch**, open
+   it, then ⋮ → **Edit dashboard** → ⋮ → **Raw configuration editor**, paste
+   and save.
+
+The dashboard shows daily graphs, yesterday's and this month's totals per meter,
+the monthly peaks, the sync status and the sync button. Generate it again after
+changing the meter selection.
 
 ```yaml
 action: energyid_import.rebuild_statistics

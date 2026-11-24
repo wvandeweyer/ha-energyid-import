@@ -144,6 +144,16 @@
           "description": "Eerste dag om opnieuw op te bouwen. Zonder datum begint het bij het begin van de geïmporteerde historiek."
         }
       }
+    },
+    "generate_dashboard": {
+      "name": "Dashboard genereren",
+      "description": "Geeft een dashboard terug met de statistieken, pieken en syncstatus van dit dossier. Plak het antwoord in de raw configuration editor van een nieuw dashboard.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Dossier",
+          "description": "Het EnergyID-dossier waarvoor het dashboard gemaakt wordt."
+        }
+      }
     }
   },
   "exceptions": {

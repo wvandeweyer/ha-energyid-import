@@ -144,6 +144,16 @@
           "description": "First day to rebuild. Without a date the rebuild starts at the beginning of the imported history."
         }
       }
+    },
+    "generate_dashboard": {
+      "name": "Generate dashboard",
+      "description": "Returns a dashboard with this record's statistics, peaks and sync status. Paste the response into a new dashboard's raw configuration editor.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Record",
+          "description": "The EnergyID record to build the dashboard for."
+        }
+      }
     }
   },
   "exceptions": {

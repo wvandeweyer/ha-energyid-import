@@ -4,13 +4,20 @@ from datetime import date
 from typing import Final
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+    callback,
+)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
 import voluptuous as vol
 
 from .const import CONF_RECORD_ID, DOMAIN
 from .coordinator import EnergyIDConfigEntry, EnergyIDCoordinator
+from .dashboard import build_dashboard
 
 ATTR_CONFIG_ENTRY_ID: Final = "config_entry_id"
 ATTR_DEVICE_ID: Final = "device_id"
@@ -78,10 +85,23 @@ async def _async_rebuild(call: ServiceCall) -> None:
     _raise_if_failed(coordinator)
 
 
+async def _async_dashboard(call: ServiceCall) -> ServiceResponse:
+    """Return a dashboard configuration for a record, ready to paste."""
+    coordinator = _loaded_coordinator(call.hass, call.data[ATTR_CONFIG_ENTRY_ID])
+    return build_dashboard(call.hass, coordinator.entry)
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the services once for the integration."""
     hass.services.async_register(DOMAIN, "sync", _async_sync, schema=SYNC_SCHEMA)
     hass.services.async_register(
         DOMAIN, "rebuild_statistics", _async_rebuild, schema=REBUILD_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "generate_dashboard",
+        _async_dashboard,
+        schema=SYNC_SCHEMA,
+        supports_response=SupportsResponse.ONLY,
     )
