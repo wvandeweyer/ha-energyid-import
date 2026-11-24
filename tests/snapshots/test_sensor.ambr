@@ -2,6 +2,11 @@
 # name: test_sensors_and_devices
   list([
     tuple(
+      'button.dummy_home_sync_now',
+      'unknown',
+      'Dummy Home',
+    ),
+    tuple(
       'sensor.dummy_grid_export_day_high_latest_data',
       '2026-11-23T23:00:00+00:00',
       'Dummy Grid export day (high)',

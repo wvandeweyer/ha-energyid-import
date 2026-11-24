@@ -6,5 +6,12 @@
     "rebuild_statistics": {
       "service": "mdi:database-refresh"
     }
+  },
+  "entity": {
+    "button": {
+      "sync": {
+        "default": "mdi:sync"
+      }
+    }
   }
 }
