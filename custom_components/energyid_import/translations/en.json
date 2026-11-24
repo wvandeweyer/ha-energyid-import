@@ -74,5 +74,15 @@
       "cannot_connect": "Could not reach EnergyID.",
       "unknown": "EnergyID returned an unexpected response."
     }
+  },
+  "entity": {
+    "sensor": {
+      "latest_data": {
+        "name": "Latest data"
+      },
+      "last_sync": {
+        "name": "Last sync"
+      }
+    }
   }
 }

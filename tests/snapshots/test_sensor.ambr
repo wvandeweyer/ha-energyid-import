@@ -1,0 +1,20 @@
+# serializer version: 1
+# name: test_sensors_and_devices
+  list([
+    tuple(
+      'sensor.dummy_grid_export_day_high_latest_data',
+      '2026-11-23T23:00:00+00:00',
+      'Dummy Grid export day (high)',
+    ),
+    tuple(
+      'sensor.dummy_grid_import_day_high_latest_data',
+      '2026-11-23T23:00:00+00:00',
+      'Dummy Grid import day (high)',
+    ),
+    tuple(
+      'sensor.dummy_home_last_sync',
+      '2026-11-24T12:00:00+00:00',
+      'Dummy Home',
+    ),
+  ])
+# ---

@@ -74,5 +74,15 @@
       "cannot_connect": "EnergyID is niet bereikbaar.",
       "unknown": "EnergyID gaf een onverwacht antwoord."
     }
+  },
+  "entity": {
+    "sensor": {
+      "latest_data": {
+        "name": "Laatste data"
+      },
+      "last_sync": {
+        "name": "Laatste sync"
+      }
+    }
   }
 }
