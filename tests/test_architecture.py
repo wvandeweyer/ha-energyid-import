@@ -38,7 +38,8 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
 FORBIDDEN_CALLS = frozenset(
     {"create_task", "ensure_future", "gather", "async_create_task"}
 )
-CLOCK_NAMES = frozenset({"now", "utcnow", "today", "time", "monotonic", "dt_util"})
+CLOCK_CALLS = frozenset({"now", "utcnow", "today", "time", "monotonic", "perf_counter"})
+CLOCK_MODULES = frozenset({"time", "homeassistant"})
 OVERRIDDEN_PROPERTIES = frozenset({"state", "name", "unit_of_measurement"})
 MUTABLE_NODES = (ast.List, ast.Dict, ast.Set, ast.ListComp, ast.DictComp, ast.SetComp)
 MUTABLE_FACTORIES = frozenset({"list", "dict", "set", "defaultdict"})
@@ -215,14 +216,16 @@ def test_enum_values_only_in_const() -> None:
 
 
 def test_statistics_does_not_read_the_clock() -> None:
-    """statistics.py receives `now` as an argument."""
-    path = PACKAGE / "statistics.py"
-    if not path.exists():
-        pytest.skip("statistics.py arrives in phase 2")
-    for node in ast.walk(parse(path)):
-        name = node.attr if isinstance(node, ast.Attribute) else None
-        name = node.id if isinstance(node, ast.Name) else name
-        assert name not in CLOCK_NAMES, f"statistics.py:{getattr(node, 'lineno', 0)}"
+    """statistics.py receives `now` as an argument and never calls the clock."""
+    tree = parse(PACKAGE / "statistics.py")
+    assert imported_roots(tree).isdisjoint(CLOCK_MODULES)
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        name = func.attr if isinstance(func, ast.Attribute) else None
+        name = func.id if isinstance(func, ast.Name) else name
+        assert name not in CLOCK_CALLS, f"statistics.py:{node.lineno}"
 
 
 def test_api_returns_only_dataclasses() -> None:
