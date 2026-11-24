@@ -67,6 +67,15 @@ WINDOW_DAYS: Final = MappingProxyType(
     }
 )
 
+# Nominal length of one data point; a point counts once its interval has passed.
+INTERVAL_DURATION: Final = MappingProxyType(
+    {
+        Interval.QUARTER_HOUR: timedelta(minutes=15),
+        Interval.HOUR: timedelta(hours=1),
+        Interval.DAY: timedelta(days=1),
+    }
+)
+
 # Water reaches Home Assistant faster through the P1 port of the digital meter.
 EXCLUDED_METRICS: Final = frozenset({Metric.DRINKING_WATER_IMPORT})
 
