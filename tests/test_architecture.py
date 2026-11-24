@@ -29,7 +29,10 @@ ALLOWED_IMPORTS: dict[str, frozenset[str]] = {
     "entity": frozenset({"const", "api", "statistics", "coordinator"}),
     "sensor": frozenset({"const", "api", "statistics", "coordinator", "entity"}),
     "button": frozenset({"const", "api", "statistics", "coordinator", "entity"}),
-    "services": frozenset({"const", "api", "statistics", "coordinator", "entity"}),
+    "services": frozenset(
+        {"const", "api", "statistics", "coordinator", "entity", "dashboard"}
+    ),
+    "dashboard": frozenset({"const", "api", "statistics", "coordinator", "entity"}),
     "diagnostics": frozenset({"const", "api", "statistics", "coordinator", "entity"}),
     "config_flow": frozenset({"const", "api"}),
     "__init__": frozenset(

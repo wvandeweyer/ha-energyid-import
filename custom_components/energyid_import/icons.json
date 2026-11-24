@@ -5,6 +5,9 @@
     },
     "rebuild_statistics": {
       "service": "mdi:database-refresh"
+    },
+    "generate_dashboard": {
+      "service": "mdi:view-dashboard"
     }
   },
   "entity": {

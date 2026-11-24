@@ -15,3 +15,10 @@ rebuild_statistics:
     start_date:
       selector:
         date:
+generate_dashboard:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: energyid_import

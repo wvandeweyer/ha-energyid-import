@@ -1,0 +1,106 @@
+# serializer version: 1
+# name: test_dashboard_lists_statistics_and_entities
+  dict({
+    'title': 'EnergyID',
+    'views': list([
+      dict({
+        'cards': list([
+          dict({
+            'chart_type': 'bar',
+            'days_to_show': 14,
+            'entities': list([
+              dict({
+                'entity': 'energyid_import:meter_dummy_meter_1',
+                'name': 'Dummy Grid import day (high)',
+              }),
+            ]),
+            'period': 'day',
+            'stat_types': list([
+              'change',
+            ]),
+            'title': 'Grid consumption per day',
+            'type': 'statistics-graph',
+          }),
+          dict({
+            'entity': 'energyid_import:meter_dummy_meter_1',
+            'name': 'Dummy Grid import day (high), yesterday',
+            'period': dict({
+              'calendar': dict({
+                'offset': -1,
+                'period': 'day',
+              }),
+            }),
+            'stat_type': 'change',
+            'type': 'statistic',
+          }),
+          dict({
+            'entity': 'energyid_import:meter_dummy_meter_1',
+            'name': 'Dummy Grid import day (high), this month',
+            'period': dict({
+              'calendar': dict({
+                'offset': 0,
+                'period': 'month',
+              }),
+            }),
+            'stat_type': 'change',
+            'type': 'statistic',
+          }),
+          dict({
+            'chart_type': 'bar',
+            'days_to_show': 14,
+            'entities': list([
+              dict({
+                'entity': 'energyid_import:meter_dummy_meter_3',
+                'name': 'Dummy Grid export day (high)',
+              }),
+            ]),
+            'period': 'day',
+            'stat_types': list([
+              'change',
+            ]),
+            'title': 'Return to grid per day',
+            'type': 'statistics-graph',
+          }),
+          dict({
+            'entity': 'energyid_import:meter_dummy_meter_3',
+            'name': 'Dummy Grid export day (high), yesterday',
+            'period': dict({
+              'calendar': dict({
+                'offset': -1,
+                'period': 'day',
+              }),
+            }),
+            'stat_type': 'change',
+            'type': 'statistic',
+          }),
+          dict({
+            'entity': 'energyid_import:meter_dummy_meter_3',
+            'name': 'Dummy Grid export day (high), this month',
+            'period': dict({
+              'calendar': dict({
+                'offset': 0,
+                'period': 'month',
+              }),
+            }),
+            'stat_type': 'change',
+            'type': 'statistic',
+          }),
+          dict({
+            'entities': list([
+              'button.dummy_home_sync_now',
+              'sensor.dummy_home_last_sync',
+              'sensor.dummy_home_peak_this_month',
+              'sensor.dummy_home_peak_last_month',
+              'sensor.dummy_grid_import_day_high_latest_data',
+              'sensor.dummy_grid_export_day_high_latest_data',
+            ]),
+            'title': 'EnergyID',
+            'type': 'entities',
+          }),
+        ]),
+        'path': 'energyid',
+        'title': 'Dummy Home',
+      }),
+    ]),
+  })
+# ---
