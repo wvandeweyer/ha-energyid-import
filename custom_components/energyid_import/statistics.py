@@ -5,14 +5,26 @@ arguments. Each sync rewrites a contiguous window of hours with a sum that is
 computed again from the hour before the window.
 """
 
+from calendar import monthrange
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, tzinfo
+import re
 from typing import Final, Protocol
 
-from .const import INTERVAL_DURATION, Interval
+from .const import (
+    DOMAIN,
+    INTERVAL_DURATION,
+    REFETCH_DAYS,
+    STATISTIC_PREFIX,
+    UNIT_CLASSES,
+    Interval,
+    Unit,
+)
 
 ONE_HOUR: Final = timedelta(hours=1)
+MONTHS_PER_YEAR: Final = 12
+_NOT_SLUG: Final = re.compile(r"[^a-z0-9]+")
 
 
 class Point(Protocol):
@@ -52,6 +64,16 @@ class Normalized:
 
     hours: tuple[HourValue, ...]
     negative: int
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class StatisticSpec:
+    """Identity and unit of the statistic for one meter."""
+
+    statistic_id: str
+    name: str
+    unit: str
+    unit_class: str
 
 
 def hour_start(moment: datetime) -> datetime:
@@ -124,3 +146,67 @@ def plan(
     base_sum = existing[0].sum - existing[0].state if existing else previous_sum
     current = (HourValue(start=row.start, state=row.state) for row in existing)
     return accumulate(merge(current, fresh), base_sum=base_sum)
+
+
+def subtract_months(day: date, months: int) -> date:
+    """Return day moved back by whole months, clamped to the month's last day."""
+    index = day.year * MONTHS_PER_YEAR + day.month - 1 - months
+    year, month = divmod(index, MONTHS_PER_YEAR)
+    return day.replace(
+        year=year, month=month + 1, day=min(day.day, monthrange(year, month + 1)[1])
+    )
+
+
+def window_start(
+    *,
+    last_start: datetime | None,
+    today: date,
+    time_zone: tzinfo,
+    backfill_months: int,
+) -> date:
+    """Return the first local date a sync fetches.
+
+    Without stored statistics the backfill reaches back backfill_months; with
+    them the window reaches REFETCH_DAYS behind the last stored hour.
+    """
+    if last_start is None:
+        return subtract_months(today, backfill_months)
+    refetch_from = last_start - timedelta(days=REFETCH_DAYS)
+    return min(refetch_from.astimezone(time_zone).date(), today)
+
+
+def local_midnight(day: date, time_zone: tzinfo) -> datetime:
+    """Return the UTC moment at which a local date starts."""
+    return datetime(day.year, day.month, day.day, tzinfo=time_zone).astimezone(UTC)
+
+
+def statistic_id(meter_id: str) -> str:
+    """Return a valid external statistic id for a meter id."""
+    slug = _NOT_SLUG.sub("_", meter_id.lower()).strip("_")
+    if not slug:
+        msg = "Meter id has no characters usable in a statistic id"
+        raise ValueError(msg)
+    return f"{DOMAIN}:{STATISTIC_PREFIX}{slug}"
+
+
+def statistic_name(
+    record_name: str,
+    meter_name: str,
+    *,
+    register: str | None,
+    ean_suffix: str | None,
+) -> str:
+    """Return the display name, with register and EAN suffix when given."""
+    details = [part for part in (register, ean_suffix and f"EAN …{ean_suffix}") if part]
+    name = f"EnergyID {record_name} {meter_name}"
+    return f"{name} ({', '.join(details)})" if details else name
+
+
+def statistic_spec(meter_id: str, name: str, unit: Unit) -> StatisticSpec:
+    """Return the statistic identity and unit for a meter."""
+    return StatisticSpec(
+        statistic_id=statistic_id(meter_id),
+        name=name,
+        unit=unit.value,
+        unit_class=UNIT_CLASSES[unit],
+    )
