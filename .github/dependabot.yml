@@ -4,7 +4,19 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
   - package-ecosystem: uv
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # Pins the minimum supported Home Assistant release; raise it on purpose.
+      - dependency-name: pytest-homeassistant-custom-component
+      - dependency-name: homeassistant
+    groups:
+      dev-tools:
+        patterns: ["*"]
+        # The spec wants each new ruff or mypy version in its own pull request.
+        exclude-patterns: ["ruff", "mypy"]
