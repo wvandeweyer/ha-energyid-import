@@ -98,5 +98,42 @@
       "title": "EnergyID-meter {meter} is niet meer beschikbaar",
       "description": "De gekozen meter {meter} bestaat niet meer in het dossier of kan niet meer geïmporteerd worden. Verwijder hem uit de meterselectie in de opties van de integratie."
     }
+  },
+  "services": {
+    "sync": {
+      "name": "Nu synchroniseren",
+      "description": "Haalt de nieuwste EnergyID-data van een dossier op en werkt de statistieken bij.",
+      "fields": {
+        "config_entry_id": {
+          "name": "Dossier",
+          "description": "Het EnergyID-dossier om te synchroniseren."
+        }
+      }
+    },
+    "rebuild_statistics": {
+      "name": "Statistieken opnieuw opbouwen",
+      "description": "Haalt de data van een meter opnieuw op en herschrijft de statistieken vanaf een datum.",
+      "fields": {
+        "device_id": {
+          "name": "Meter",
+          "description": "Het meterapparaat om opnieuw op te bouwen."
+        },
+        "start_date": {
+          "name": "Startdatum",
+          "description": "Eerste dag om opnieuw op te bouwen. Zonder datum begint het bij het begin van de geïmporteerde historiek."
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "entry_not_loaded": {
+      "message": "Het EnergyID-dossier is niet geladen."
+    },
+    "not_a_meter": {
+      "message": "Het gekozen apparaat is geen EnergyID-meter."
+    },
+    "sync_failed": {
+      "message": "De synchronisatie met EnergyID is mislukt. Bekijk de logs voor details."
+    }
   }
 }

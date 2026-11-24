@@ -4,14 +4,23 @@ from typing import Final
 
 from homeassistant.const import CONF_API_KEY, Platform
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import config_validation as cv, issue_registry as ir
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.typing import ConfigType
 
 from .api import EnergyIDClient
 from .const import CONF_METER_IDS, DOMAIN
 from .coordinator import ISSUE_KINDS, EnergyIDConfigEntry, EnergyIDCoordinator
+from .services import async_setup_services
 
 PLATFORMS: Final[tuple[Platform, ...]] = (Platform.SENSOR,)
+CONFIG_SCHEMA: Final = cv.config_entry_only_config_schema(DOMAIN)
+
+
+async def async_setup(hass: HomeAssistant, _config: ConfigType) -> bool:
+    """Register the integration's services once."""
+    async_setup_services(hass)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: EnergyIDConfigEntry) -> bool:

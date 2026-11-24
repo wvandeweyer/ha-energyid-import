@@ -1,0 +1,17 @@
+sync:
+  fields:
+    config_entry_id:
+      required: true
+      selector:
+        config_entry:
+          integration: energyid_import
+rebuild_statistics:
+  fields:
+    device_id:
+      required: true
+      selector:
+        device:
+          integration: energyid_import
+    start_date:
+      selector:
+        date:
