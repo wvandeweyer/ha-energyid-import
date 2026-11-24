@@ -23,6 +23,8 @@ from .const import (
 )
 
 ONE_HOUR: Final = timedelta(hours=1)
+QUARTER_HOUR: Final = timedelta(minutes=15)
+QUARTERS_PER_HOUR: Final = 4
 MONTHS_PER_YEAR: Final = 12
 _NOT_SLUG: Final = re.compile(r"[^a-z0-9]+")
 
@@ -210,3 +212,43 @@ def statistic_spec(meter_id: str, name: str, unit: Unit) -> StatisticSpec:
         unit=unit.value,
         unit_class=UNIT_CLASSES[unit],
     )
+
+
+@dataclass(frozen=True, slots=True, kw_only=True)
+class MonthlyPeak:
+    """The highest quarter-hour offtake of one calendar month."""
+
+    power: float
+    start: datetime
+
+
+def monthly_peaks(
+    meters: Iterable[Iterable[Point]], *, time_zone: tzinfo, now: datetime
+) -> dict[date, MonthlyPeak]:
+    """Return each local month's peak power from quarter-hour points.
+
+    Points of all meters are summed per quarter first, so day and night
+    registers count together, as the capacity tariff does. Power is the
+    quarter's energy times four; the earliest quarter wins a tie.
+    """
+    quarters: dict[datetime, float] = {}
+    for points in meters:
+        for point in points:
+            value = point.value
+            if value is None or point.timestamp + QUARTER_HOUR > now:
+                continue
+            moment = point.timestamp.astimezone(UTC)
+            quarters[moment] = quarters.get(moment, 0.0) + value
+    peaks: dict[date, MonthlyPeak] = {}
+    for moment in sorted(quarters):
+        month = moment.astimezone(time_zone).date().replace(day=1)
+        power = quarters[moment] * QUARTERS_PER_HOUR
+        current = peaks.get(month)
+        if current is None or power > current.power:
+            peaks[month] = MonthlyPeak(power=power, start=moment)
+    return peaks
+
+
+def month_start(day: date, *, months_back: int = 0) -> date:
+    """Return the first day of the month, optionally months_back earlier."""
+    return subtract_months(day.replace(day=1), months_back)
