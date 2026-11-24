@@ -13,7 +13,7 @@ from .const import CONF_METER_IDS, DOMAIN
 from .coordinator import ISSUE_KINDS, EnergyIDConfigEntry, EnergyIDCoordinator
 from .services import async_setup_services
 
-PLATFORMS: Final[tuple[Platform, ...]] = (Platform.SENSOR,)
+PLATFORMS: Final[tuple[Platform, ...]] = (Platform.BUTTON, Platform.SENSOR)
 CONFIG_SCHEMA: Final = cv.config_entry_only_config_schema(DOMAIN)
 
 
