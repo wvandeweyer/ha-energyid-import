@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  gates:
+    name: All gates (minimum HA, Python 3.13)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
+        with:
+          python-version: "3.13"
+      - run: uv sync --locked
+      - run: uv run --locked pre-commit run --all-files --show-diff-on-failure
+
+  latest-ha:
+    name: Tests (latest stable HA, Python 3.14)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+      - uses: astral-sh/setup-uv@1db35dd8eee11c5894872e0b383ae6c406cf738d  # v10.4.0
+        with:
+          python-version: "3.14"
+      - run: uv venv --python 3.14
+      - run: uv pip install pytest-homeassistant-custom-component hypothesis
+      - run: uv run --no-sync pytest -q
+
+  pr-title:
+    name: Conventional Commits title
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    steps:
+      - uses: amannn/action-semantic-pull-request@c5e23b7e584519ee15caa684cf60d056aa9f035f  # v6.1.3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pr-size:
+    name: At most 400 changed lines
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Count changed lines without fixtures, snapshots and lockfile
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --numstat "$BASE_SHA"...HEAD -- . \
+            ':(exclude)tests/fixtures/**' ':(exclude)tests/snapshots/**' ':(exclude)uv.lock' \
+            | awk '{added += $1; removed += $2} END {print added + removed}')
+          echo "Changed lines: ${changed:-0}"
+          test "${changed:-0}" -le 400

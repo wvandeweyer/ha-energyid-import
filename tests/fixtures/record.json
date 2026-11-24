@@ -1,0 +1,53 @@
+{
+  "recordUsers": [],
+  "id": "dummy-record-1",
+  "recordNumber": "dummy-recordnumber",
+  "recordType": "household",
+  "displayName": "Dummy Home",
+  "lastSubmissionAt": "2026-01-01T00:00:00Z",
+  "ownerId": "dummy-owner-1",
+  "address": {
+    "postalCode": "dummy-postalcode",
+    "city": "dummy-city",
+    "country": "BE",
+    "timeZone": "Europe/Brussels",
+    "lat": "dummy-lat",
+    "lon": "dummy-lon"
+  },
+  "timeZone": "Europe/Brussels",
+  "created": "2025-01-01T00:00:00Z",
+  "category": "dwelling",
+  "tags": [],
+  "dwellingType": "apartment",
+  "principalResidence": true,
+  "occupants": 2,
+  "heatingOn": "naturalGas",
+  "auxiliaryHeatingOn": "none",
+  "cookingOn": "naturalGas",
+  "hotWaterOn": "naturalGas",
+  "installations": [],
+  "plan": "free",
+  "myPermLevel": "owner",
+  "myMessagingSubscription": false,
+  "errors": 0,
+  "benchmarkingEnabled": false,
+  "prefs": {
+    "primaryServiceSlug": "Fluvius",
+    "dso": "Fluvius"
+  },
+  "enabledFeatures": [
+    "dashboard"
+  ],
+  "addons": [],
+  "limits": {
+    "maxResolution": "PT5M"
+  },
+  "hrReady": true,
+  "closed": false,
+  "stationIds": {
+    "weatherStationId": "dummy-weatherstation-1",
+    "gasStationId": "dummy-gasstation-1",
+    "carbonStationId": "dummy-carbonstation-1",
+    "powerGenerationStationId": "dummy-powergenerationstation-1"
+  }
+}

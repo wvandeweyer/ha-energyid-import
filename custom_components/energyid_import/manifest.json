@@ -1,0 +1,13 @@
+{
+  "domain": "energyid_import",
+  "name": "EnergyID Import",
+  "codeowners": ["@wvandeweyer"],
+  "config_flow": true,
+  "dependencies": ["recorder"],
+  "documentation": "https://github.com/wvandeweyer/ha-energyid-import",
+  "integration_type": "service",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/wvandeweyer/ha-energyid-import/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

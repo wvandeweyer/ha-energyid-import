@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.venv/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.hypothesis/
+.env
+# Raw discovery output stays local until it has been reviewed.
+tests/fixtures/discover/
