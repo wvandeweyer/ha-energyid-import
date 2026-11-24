@@ -45,11 +45,15 @@ from .const import (
     STALE_AFTER_DAYS,
     UPDATE_INTERVAL,
     Interval,
+    Metric,
     Unit,
 )
 from .statistics import (
+    MonthlyPeak,
     StatisticRow,
     local_midnight,
+    month_start,
+    monthly_peaks,
     normalize,
     plan,
     statistic_name,
@@ -90,6 +94,7 @@ class EnergyIDData:
     missing_meter_ids: frozenset[str]
     statuses: Mapping[str, MeterStatus]
     synced_at: datetime
+    peaks: Mapping[date, MonthlyPeak] | None
 
 
 def _to_row(row: StatisticsRow) -> StatisticRow:
@@ -138,6 +143,7 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             meters = await self.client.async_get_meters(record_id)
             chosen = tuple(m for m in meters if m.id in selected and m.importable)
             statuses = await self._async_sync_meters(record, chosen)
+            peaks = await self._async_peaks(record, meters)
         except EnergyIDAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except (EnergyIDConnectionError, EnergyIDApiError) as err:
@@ -148,6 +154,7 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             missing_meter_ids=selected - {meter.id for meter in chosen},
             statuses=MappingProxyType(statuses),
             synced_at=dt_util.utcnow(),
+            peaks=peaks,
         )
         names = {meter.id: meter.display_name for meter in meters}
         for meter_id in sorted(selected):
@@ -183,6 +190,36 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
                     "days": str(STALE_AFTER_DAYS),
                 },
             )
+
+    async def _async_peaks(
+        self, record: Record, meters: list[Meter]
+    ) -> Mapping[date, MonthlyPeak] | None:
+        """Return monthly peaks of all import meters with quarter-hour data.
+
+        Every import meter of the record counts, selected or not, because the
+        capacity tariff looks at the total offtake. A failure only drops the
+        peaks; the statistics sync stands.
+        """
+        imports = [
+            m for m in meters if m.metric == Metric.ELECTRICITY_IMPORT and m.importable
+        ]
+        if not imports or any(m.interval != Interval.QUARTER_HOUR for m in imports):
+            return None
+        time_zone = record_time_zone(record)
+        now = dt_util.utcnow()
+        today = now.astimezone(time_zone).date()
+        start = month_start(today, months_back=1)
+        try:
+            series = [
+                await self.client.async_get_data(
+                    meter.id, start, today + ONE_DAY, Interval.QUARTER_HOUR
+                )
+                for meter in imports
+            ]
+        except (EnergyIDConnectionError, EnergyIDApiError) as err:
+            _LOGGER.warning("Could not fetch quarter-hour data for the peak: %s", err)
+            return None
+        return MappingProxyType(monthly_peaks(series, time_zone=time_zone, now=now))
 
     async def _async_sync_meters(
         self, record: Record, meters: tuple[Meter, ...]
@@ -224,7 +261,7 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             ean_suffix=meter.ean_suffix if with_ean else None,
         )
         spec = statistic_spec(meter.id, name, unit)
-        time_zone = _time_zone(record)
+        time_zone = record_time_zone(record)
         last = await self._async_last_row(spec.statistic_id)
         today = now.astimezone(time_zone).date()
         rebuild = meter.id in self._rebuild
@@ -320,7 +357,7 @@ def active_issue(
     return kind
 
 
-def _time_zone(record: Record) -> tzinfo:
+def record_time_zone(record: Record) -> tzinfo:
     """Return the record's time zone, or Home Assistant's when it has none."""
     if record.time_zone:
         return ZoneInfo(record.time_zone)
