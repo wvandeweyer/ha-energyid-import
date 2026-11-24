@@ -16,7 +16,7 @@ dev = [
   "yamllint==1.37.1",
 ]
 test = [
-  "hypothesis==6.140.2",
+  "hypothesis==6.170.17",
   "pytest-homeassistant-custom-component==0.13.316",
 ]
 
