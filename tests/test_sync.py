@@ -8,6 +8,7 @@ from homeassistant.components.recorder.statistics import (
     StatisticsRow,
     statistics_during_period,
 )
+from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.recorder import get_instance
 import pytest
@@ -24,8 +25,8 @@ from custom_components.energyid_import.api import JsonValue
 from custom_components.energyid_import.const import API_BASE_URL
 from custom_components.energyid_import.coordinator import EnergyIDCoordinator
 
-from .conftest import DATA_URL_PATTERN, load_fixture
-from .const import IMPORT_METER_ID, METERS_URL, RECORD_URL
+from .conftest import DATA_URL_PATTERN, load_fixture, load_list_fixture
+from .const import EXPORT_METER_ID, IMPORT_METER_ID, METERS_URL, RECORD_URL
 
 NOW: Final = "2026-11-24 12:00:00+00:00"
 IMPORT_ID: Final = "energyid_import:meter_dummy_meter_1"
@@ -152,6 +153,87 @@ async def test_correction_updates_hour_and_later_sums(
     )
 
 
+@pytest.mark.parametrize(
+    ("response", "error"),
+    [
+        ((404, None, None), "not_found"),
+        ((200, None, "not json"), "api_error"),
+        ((200, TimeoutError(), None), "connection_error"),
+    ],
+)
+@pytest.mark.allow_warnings
+async def test_one_failing_meter_does_not_stop_others(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    response: tuple[int, BaseException | None, str | None],
+    error: str,
+) -> None:
+    """The failing meter gets an error status; the other is still written."""
+    status, exc, text = response
+    mock_record(aioclient_mock)
+    aioclient_mock.get(IMPORT_DATA_URL, status=status, exc=exc, text=text)
+    aioclient_mock.get(DATA_URL_PATTERN, json=data())
+
+    coordinator = await setup(hass, mock_config_entry)
+
+    assert coordinator.data.statuses[IMPORT_METER_ID].error == error
+    assert coordinator.data.statuses[EXPORT_METER_ID].written == 72
+    assert await stored(hass, IMPORT_ID) == []
+
+
+@pytest.mark.allow_warnings
+async def test_all_meters_failing_retries_setup(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """When no meter can be synchronised, setup is retried later."""
+    mock_record(aioclient_mock)
+    aioclient_mock.get(DATA_URL_PATTERN, status=404)
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+@pytest.mark.allow_warnings
+async def test_auth_error_on_data_starts_reauth(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """A 401 while fetching data stops the sync and asks for a new key."""
+    mock_record(aioclient_mock)
+    aioclient_mock.get(DATA_URL_PATTERN, status=401)
+    mock_config_entry.add_to_hass(hass)
+
+    await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
+    flows = hass.config_entries.flow.async_progress()
+    assert [flow["context"]["source"] for flow in flows] == [SOURCE_REAUTH]
+
+
+@pytest.mark.allow_warnings
+async def test_negative_values_are_skipped_with_one_warning(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """Negative values are left out and reported once per meter."""
+    mock_record(aioclient_mock)
+    aioclient_mock.get(DATA_URL_PATTERN, json=data((0, -1.0), (1, -2.0)))
+
+    await setup(hass, mock_config_entry)
+
+    assert len(await stored(hass, IMPORT_ID)) == 70
+    assert caplog.text.count("Skipped 2 negative values for meter dummy-meter-1") == 1
+
+
 async def test_empty_response_writes_nothing(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
@@ -165,6 +247,31 @@ async def test_empty_response_writes_nothing(
 
     status = coordinator.data.statuses[IMPORT_METER_ID]
     assert (status.written, status.latest_data, status.error) == (0, None, None)
+
+
+async def test_daily_meter_is_fetched_per_day(
+    hass: HomeAssistant,
+    aioclient_mock: AiohttpClientMocker,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """A meter with native P1D data is requested with interval P1D."""
+    meters = load_list_fixture("meters.json")
+    first = meters[0]
+    assert isinstance(first, dict)
+    first["interval"] = "P1D"
+    aioclient_mock.get(RECORD_URL, json=load_fixture("record.json"))
+    aioclient_mock.get(METERS_URL, json=meters)
+    aioclient_mock.get(DATA_URL_PATTERN, json=load_fixture("data_p1d_14d.json"))
+
+    await setup(hass, mock_config_entry)
+
+    intervals = {
+        url.query.get("interval")
+        for _, url, _, _ in aioclient_mock.mock_calls
+        if url.path.endswith(f"{IMPORT_METER_ID}/data")
+    }
+    assert intervals == {"P1D"}
+    assert len(await stored(hass, IMPORT_ID)) == 14
 
 
 async def test_record_without_time_zone_uses_home_assistant_zone(

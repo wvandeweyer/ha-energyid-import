@@ -32,6 +32,7 @@ from .api import (
     EnergyIDAuthError,
     EnergyIDClient,
     EnergyIDConnectionError,
+    EnergyIDNotFoundError,
     Meter,
     Record,
 )
@@ -60,6 +61,9 @@ type EnergyIDConfigEntry = ConfigEntry[EnergyIDCoordinator]
 
 ONE_HOUR = timedelta(hours=1)
 ONE_DAY = timedelta(days=1)
+ERROR_NOT_FOUND = "not_found"
+ERROR_API = "api_error"
+ERROR_CONNECTION = "connection_error"
 
 
 @dataclass(frozen=True, slots=True, kw_only=True)
@@ -124,6 +128,9 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             raise ConfigEntryAuthFailed(str(err)) from err
         except (EnergyIDConnectionError, EnergyIDApiError) as err:
             raise UpdateFailed(str(err)) from err
+        if chosen and all(status.error for status in statuses.values()):
+            msg = "No meter could be synchronised"
+            raise UpdateFailed(msg)
         return EnergyIDData(
             record=record,
             meters=chosen,
@@ -134,15 +141,29 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
     async def _async_sync_meters(
         self, record: Record, meters: tuple[Meter, ...]
     ) -> dict[str, MeterStatus]:
-        """Sync every meter in turn."""
+        """Sync every meter; one failing meter does not stop the others."""
         with_ean = len({meter.connection_id for meter in meters}) > 1
         now = dt_util.utcnow()
-        return {
-            meter.id: await self._async_sync_meter(
-                record, meter, now=now, with_ean=with_ean
-            )
-            for meter in meters
-        }
+        statuses: dict[str, MeterStatus] = {}
+        for meter in meters:
+            try:
+                statuses[meter.id] = await self._async_sync_meter(
+                    record, meter, now=now, with_ean=with_ean
+                )
+            except EnergyIDNotFoundError:
+                statuses[meter.id] = MeterStatus(
+                    latest_data=None, written=0, error=ERROR_NOT_FOUND
+                )
+            except EnergyIDApiError as err:
+                _LOGGER.warning("Meter %s returned unexpected data: %s", meter.id, err)
+                statuses[meter.id] = MeterStatus(
+                    latest_data=None, written=0, error=ERROR_API
+                )
+            except EnergyIDConnectionError:
+                statuses[meter.id] = MeterStatus(
+                    latest_data=None, written=0, error=ERROR_CONNECTION
+                )
+        return statuses
 
     async def _async_sync_meter(
         self, record: Record, meter: Meter, *, now: datetime, with_ean: bool
@@ -166,11 +187,15 @@ class EnergyIDCoordinator(DataUpdateCoordinator[EnergyIDData]):
             time_zone=time_zone,
             backfill_months=self.entry.options[CONF_BACKFILL_MONTHS],
         )
-        interval = Interval.HOUR
+        interval = Interval.DAY if meter.interval == Interval.DAY else Interval.HOUR
         points = await self.client.async_get_data(
             meter.id, start, today + ONE_DAY, interval
         )
         normalized = normalize(points, interval=interval, now=now)
+        if normalized.negative:
+            _LOGGER.warning(
+                "Skipped %s negative values for meter %s", normalized.negative, meter.id
+            )
         existing = await self._async_rows(
             spec.statistic_id, local_midnight(start, time_zone)
         )
