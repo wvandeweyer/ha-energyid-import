@@ -165,7 +165,7 @@ De gebruiker kiest deze statistics zelf in de Energy-dashboard (grid consumption
 **Devices**
 
 - Eén device per dossier: `entry_type = SERVICE`, identifier `(DOMAIN, record_id)`, fabrikant EnergyID, `configuration_url` naar het dossier.
-- Eén device per gekozen meter met `via_device` naar het dossier. Een meter die uit de selectie verdwijnt, verliest zijn device.
+- Eén device per gekozen meter met `via_device` naar het dossier en als serienummer `EAN …1234`, de laatste 4 cijfers van de EAN (beslissing 2026-11-24). Een meter die uit de selectie verdwijnt, verliest zijn device.
 
 **Entities**
 
