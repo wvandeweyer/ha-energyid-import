@@ -4,6 +4,7 @@ from collections.abc import Iterator
 import json
 import logging
 from pathlib import Path
+import re
 
 from homeassistant.components.recorder.core import Recorder
 from homeassistant.const import CONF_API_KEY
@@ -15,6 +16,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import (
 
 from custom_components.energyid_import.api import JsonValue
 from custom_components.energyid_import.const import (
+    API_BASE_URL,
     CONF_BACKFILL_MONTHS,
     CONF_METER_IDS,
     CONF_RECORD_ID,
@@ -33,6 +35,7 @@ from .const import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures"
+DATA_URL_PATTERN = re.compile(rf"{re.escape(API_BASE_URL)}/meters/[^/]+/data")
 
 # Home Assistant logs this for every custom integration it loads.
 _EXPECTED_HA_WARNING = "has not been tested by Home Assistant"
@@ -104,4 +107,5 @@ def mock_api(aioclient_mock: AiohttpClientMocker) -> AiohttpClientMocker:
     aioclient_mock.get(RECORDS_URL, json=load_fixture("records.json"))
     aioclient_mock.get(RECORD_URL, json=load_fixture("record.json"))
     aioclient_mock.get(METERS_URL, json=load_fixture("meters.json"))
+    aioclient_mock.get(DATA_URL_PATTERN, json=load_fixture("data_pt1h_3d.json"))
     return aioclient_mock

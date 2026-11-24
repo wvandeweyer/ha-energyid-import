@@ -13,7 +13,7 @@ from custom_components.energyid_import.coordinator import (
     EnergyIDData,
 )
 
-from .conftest import load_fixture
+from .conftest import DATA_URL_PATTERN, load_fixture
 from .const import (
     EXPORT_METER_ID,
     IMPORT_METER_ID,
@@ -70,6 +70,7 @@ async def test_missing_meter_is_reported(
     assert isinstance(meters, list)
     aioclient_mock.get(RECORD_URL, json=load_fixture("record.json"))
     aioclient_mock.get(METERS_URL, json=meters[:1])
+    aioclient_mock.get(DATA_URL_PATTERN, json=load_fixture("data_pt1h_3d.json"))
 
     await setup_entry(hass, mock_config_entry)
 
