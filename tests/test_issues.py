@@ -12,6 +12,7 @@ from pytest_homeassistant_custom_component.test_util.aiohttp import (
     AiohttpClientMocker,
 )
 
+from custom_components.energyid_import.api import JsonValue
 from custom_components.energyid_import.const import DOMAIN
 from custom_components.energyid_import.coordinator import (
     ERROR_API,
@@ -24,6 +25,12 @@ from .conftest import DATA_URL_PATTERN, load_fixture, load_list_fixture
 from .const import EXPORT_METER_ID, IMPORT_METER_ID, METERS_URL, RECORD_URL
 
 NOW: Final = datetime(2026, 11, 24, 12, tzinfo=UTC)
+
+
+@pytest.fixture(autouse=True)
+def frozen_time(freezer: FrozenDateTimeFactory) -> None:
+    """Freeze time a week after the recorded data ends."""
+    freezer.move_to("2026-12-01 12:00:00+00:00")
 
 
 def status(latest: datetime | None, error: str | None = None) -> MeterStatus:
@@ -62,14 +69,27 @@ def mock_meters(aioclient_mock: AiohttpClientMocker, count: int) -> None:
     aioclient_mock.get(METERS_URL, json=load_list_fixture("meters.json")[:count])
 
 
+def shifted_data(days: int) -> JsonValue:
+    """Return the recorded hourly data moved forward by whole days."""
+    payload = load_fixture("data_pt1h_3d.json")
+    assert isinstance(payload, dict)
+    points = payload["data"]
+    assert isinstance(points, list)
+    for point in points:
+        assert isinstance(point, dict)
+        stamp = point["timestamp"]
+        assert isinstance(stamp, str)
+        moved = datetime.fromisoformat(stamp) + timedelta(days=days)
+        point["timestamp"] = moved.isoformat()
+    return payload
+
+
 async def test_issues_follow_the_sync(
     hass: HomeAssistant,
     aioclient_mock: AiohttpClientMocker,
     mock_config_entry: MockConfigEntry,
-    freezer: FrozenDateTimeFactory,
 ) -> None:
     """Issues appear for missing and stale meters and clear when fixed."""
-    freezer.move_to("2026-12-01 12:00:00+00:00")
     mock_meters(aioclient_mock, 1)
     aioclient_mock.get(DATA_URL_PATTERN, json=load_fixture("data_pt1h_3d.json"))
     mock_config_entry.add_to_hass(hass)
@@ -81,10 +101,9 @@ async def test_issues_follow_the_sync(
         f"meter_removed_{EXPORT_METER_ID}",
     }
 
-    freezer.move_to("2026-11-24 12:00:00+00:00")
     aioclient_mock.clear_requests()
     mock_meters(aioclient_mock, 3)
-    aioclient_mock.get(DATA_URL_PATTERN, json=load_fixture("data_pt1h_3d.json"))
+    aioclient_mock.get(DATA_URL_PATTERN, json=shifted_data(7))
     coordinator = mock_config_entry.runtime_data
     assert isinstance(coordinator, EnergyIDCoordinator)
     await coordinator.async_refresh()
